@@ -20,7 +20,7 @@ var Short error = errors.New("packet data too short for its declared LLAP length
 var NotDDP error = errors.New("not a DDP packet")
 
 func DecodeLLAPPacket(p []byte) (*LLAPPacket, error) {
-	if len(p) < 5 {
+	if len(p) < 3 {
 		return nil, IncompleteHeader
 	}
 	
@@ -31,16 +31,18 @@ func DecodeLLAPPacket(p []byte) (*LLAPPacket, error) {
 		LLAPType: p[2],
 	}
 	
-	size1 := uint16(p[3] & 3) << 8
-	size2 := uint16(p[4])
-	size := size1 + size2
+	if len(p) > 5 {
+		size1 := uint16(p[3] & 3) << 8
+		size2 := uint16(p[4])
+		size := size1 + size2
 	
-	if len(p) < int(size) + 3 {
-		return nil, Short
+		if len(p) < int(size) + 3 {
+			return nil, Short
+		}
+	
+		packet.Length = size
+		packet.Data = p[3:size+3]
 	}
-	
-	packet.Length = size
-	packet.Data = p[3:size+3]
 	
 	return &packet, nil
 }

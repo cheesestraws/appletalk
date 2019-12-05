@@ -6,5 +6,7 @@ import (
 
 func main() {
 	l := lt.LToUDPListener{}
-	l.Start()	
+	l.Start()
+	
+	select { }	
 }
