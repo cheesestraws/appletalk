@@ -58,7 +58,7 @@ func (l *LToUDPListener) Channels() (<-chan []byte, chan<- []byte, <-chan error)
 func (l *LToUDPListener) Start() error {
 	l.init()
 
-	go l.debugRecv()
+//	go l.debugRecv()
 
 	// Set up the multicast listener
 	conn, err := net.ListenMulticastUDP("udp", nil, multicastGroup)

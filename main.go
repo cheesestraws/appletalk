@@ -5,8 +5,8 @@ import (
 )
 
 func main() {
-	l := lt.LToUDPListener{}
-	l.Start()
+	p := lt.NewPort(&lt.LToUDPListener{})
+	p.Start()
 	
 	select { }	
 }
