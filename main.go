@@ -7,6 +7,7 @@ import (
 func main() {
 	p := lt.NewPort(&lt.LToUDPListener{})
 	p.Start()
+	p.AcquireAddress()
 	
 	select { }	
 }

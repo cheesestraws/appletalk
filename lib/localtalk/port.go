@@ -12,6 +12,9 @@ type Port struct {
 	// Address
 	iHaveAnAddress bool
 	address uint8
+	
+	// Address discovery state
+	addressAcqState addressAcqState
 }
 
 func NewPort(l Listener) *Port {
@@ -61,7 +64,7 @@ func (p *Port) Start() error {
 	
 	// for the moment force to have an address of 129
 	p.iHaveAnAddress = true
-	p.address = 250
+	p.address = 32
 	
 	return nil
 }
@@ -72,6 +75,11 @@ func (p *Port) SendRaw(packet []byte) {
 
 // handleLLAPControlPacket 
 func (p *Port) handleLLAPControlPacket(l *LLAPPacket) {
+	if l.LLAPType == lapACK {
+		p.handleACK(l)
+		return
+	}
+	
 	if l.LLAPType == lapENQ {
 		// This is a host enquiring whether its address is actually unique or not.
 		if !p.iHaveAnAddress {

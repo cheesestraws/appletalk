@@ -18,6 +18,11 @@ var multicastGroup = &net.UDPAddr{
 	IP:   net.ParseIP("224.0.0.3"),
 	Port: 1954,
 }
+var broadcast = &net.UDPAddr{
+	IP:   net.ParseIP("255.255.255.255"),
+	Port: 1954,
+}
+
 
 func (l *LToUDPListener) init() {
 	if l.recvC == nil {
@@ -107,6 +112,6 @@ func (l *LToUDPListener) runSend(conn *net.UDPConn) {
 			log.Printf("    %s", ddp.PrettyHeaders())
 		}
 		
-		_, err = conn.WriteToUDP(packet, multicastGroup)
+		_, err = conn.WriteToUDP(packet, broadcast)
 	}
 }
