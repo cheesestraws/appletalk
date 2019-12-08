@@ -71,20 +71,27 @@ func (a *addressAcqState) tellMeWhatToDoNext() (uint8, int) {
 	return candidate, retriesRemaining
 }
 
+// candidate returns the current candidate address
+func (a *addressAcqState) candidate() uint8 {
+	a.l.Lock()
+	defer a.l.Unlock()
+	return a.addressCandidate
+}
+
 // An ACK is someone on the network going "Oi! That's my address!".  If it's
 // not our address we don't mind, but if it's ours and we're doing address
 // acquisition then we need to try again.  If we're not doing address 
 // acquisition and we get an ACK then we ignore it and hope the problem
 // goes away, because I don't know what to do in that case.
 func (p *Port) handleACK(packet *LLAPPacket) {
-	if p.iHaveAnAddress {
+	_, iHaveAnAddress := p.Address()
+
+	if iHaveAnAddress {
 		// if I already have an address, none of this matters.
 		return
 	}
 	
-	p.addressAcqState.l.Lock()
-	candidate := p.addressAcqState.addressCandidate
-	p.addressAcqState.l.Unlock()
+	candidate := p.addressAcqState.candidate()
 	
 	// If the ack isn't for our candidate address then ignore it
 	if packet.Src != candidate {
@@ -99,17 +106,19 @@ func (p *Port) handleACK(packet *LLAPPacket) {
 // address if nobody objects.  If we object, we should respond with an ACK
 // message
 func (p *Port) handleENQ(packet *LLAPPacket) {
+	myAddress, iHaveAnAddress := p.Address()
+
 	// This is a host enquiring whether its address is actually unique or not.
-	if !p.iHaveAnAddress {
+	if !iHaveAnAddress {
 		// If I have no address, then ignore this packet
 		return
 	}
-	if packet.Src == p.address {
+	if packet.Src == myAddress {
 		// Whoops!  This is my address!
 		// Send an acknowledgement that I already own this address, so the other
 		// will have to change its tune
 		log.Printf("Detected address collision; looking sternly at other node")
-		p.SendRaw([]byte{p.address, p.address, lapACK})
+		p.SendRaw([]byte{myAddress, myAddress, lapACK})
 	}
 }
 
