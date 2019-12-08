@@ -95,6 +95,28 @@ func (p *Port) handleACK(packet *LLAPPacket) {
 	p.addressAcqState.reset()
 }
 
+// An ENQ is someone on the network broadcasting that it intends to claim an
+// address if nobody objects.  If we object, we should respond with an ACK
+// message
+func (p *Port) handleENQ(packet *LLAPPacket) {
+	// This is a host enquiring whether its address is actually unique or not.
+	if !p.iHaveAnAddress {
+		// If I have no address, then ignore this packet
+		return
+	}
+	if packet.Src == p.address {
+		// Whoops!  This is my address!
+		// Send an acknowledgement that I already own this address, so the other
+		// will have to change its tune
+		log.Printf("Detected address collision; looking sternly at other node")
+		p.SendRaw([]byte{p.address, p.address, lapACK})
+	}
+}
+
+// AcquireAddress runs the LocalTalk node discovery process to find a unique
+// address for this localtalk port on its own network.  When it finds one,
+// it sets the address on the port.  Blocks until address acquisition is
+// complete.
 func (p *Port) AcquireAddress() {
 	log.Printf("acquiring address...")
 	p.addressAcqState.reset()
@@ -114,8 +136,7 @@ func (p *Port) AcquireAddress() {
 		time.Sleep(200 * time.Microsecond)
 	}
 	
-	p.address = candidate
-	p.iHaveAnAddress = true
+	p.SetAddress(candidate)
 	
 	log.Printf("Got address: %v", p.address)
 }

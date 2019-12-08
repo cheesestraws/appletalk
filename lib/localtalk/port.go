@@ -2,6 +2,7 @@ package localtalk
 
 import (
 	"log"
+	"sync"
 )
 
 type Port struct {
@@ -10,6 +11,7 @@ type Port struct {
 	errorC <-chan error
 	
 	// Address
+	al sync.RWMutex
 	iHaveAnAddress bool
 	address uint8
 	
@@ -21,6 +23,21 @@ func NewPort(l Listener) *Port {
 	return &Port{
 		io: l,
 	}
+}
+
+func (p *Port) SetAddress(addr uint8) {
+	p.al.Lock()
+	defer p.al.Unlock()
+	
+	p.iHaveAnAddress = true
+	p.address = addr
+}
+
+func (p *Port) Address() (uint8, bool) {
+	p.al.RLock()
+	defer p.al.RUnlock()
+	
+	return p.address, p.iHaveAnAddress
 }
 
 func (p *Port) Start() error {
@@ -62,10 +79,6 @@ func (p *Port) Start() error {
 	p.sendC = sendC
 	p.errorC = errorC
 	
-	// for the moment force to have an address of 129
-	p.iHaveAnAddress = true
-	p.address = 32
-	
 	return nil
 }
 
@@ -81,17 +94,7 @@ func (p *Port) handleLLAPControlPacket(l *LLAPPacket) {
 	}
 	
 	if l.LLAPType == lapENQ {
-		// This is a host enquiring whether its address is actually unique or not.
-		if !p.iHaveAnAddress {
-			// If I have no address, then ignore this packet
-			return
-		}
-		if l.Src == p.address {
-			// Whoops!  This is my address!
-			// Send an acknowledgement that I already own this address, so the other
-			// will have to change its tune
-			log.Printf("Detected address collision; looking sternly at other node")
-			p.SendRaw([]byte{p.address, p.address, lapACK})
-		}
+		p.handleENQ(l)
+		return
 	}
 }
