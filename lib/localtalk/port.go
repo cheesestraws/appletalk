@@ -17,6 +17,8 @@ type Port struct {
 	
 	// Address discovery state
 	addressAcqState addressAcqState
+	
+	LLAPControlCallbacks CallbackChain
 }
 
 func NewPort(l Listener) *Port {
@@ -97,4 +99,6 @@ func (p *Port) handleLLAPControlPacket(l *LLAPPacket) {
 		p.handleENQ(l)
 		return
 	}
+	
+	p.LLAPControlCallbacks.Run(l)
 }
