@@ -4,26 +4,24 @@ import (
 	"sync"
 )
 
-type PacketCallback func(l *LLAPPacket)
-
 type CallbackChain struct {
 	l sync.RWMutex
 	
-	m map[*PacketCallback]struct{} // well this is a hack
+	m map[*func(l *LLAPPacket)]struct{} // well this is a hack
 }
 
-func (c *CallbackChain) AddCallback(p *PacketCallback) {
+func (c *CallbackChain) Add(p *func(l *LLAPPacket)) {
 	c.l.Lock()
 	defer c.l.Unlock()
 	
 	if c.m == nil {
-		c.m = make(map[*PacketCallback]struct{})
+		c.m = make(map[*func(l *LLAPPacket)]struct{})
 	}
 	
 	c.m[p] = struct{}{}
 }
 
-func (c *CallbackChain) RemoveCallback(p *PacketCallback) {
+func (c *CallbackChain) Remove(p *func(l *LLAPPacket)) {
 	c.l.Lock()
 	defer c.l.Unlock()
 	

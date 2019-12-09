@@ -49,7 +49,7 @@ func (a *addressAcqState) reset() {
 	defer a.l.Unlock()
 	
 	// pick a random address
-	a.addressCandidate = uint8(randomiser.Intn(128))
+	a.addressCandidate = uint8(randomiser.Intn(126) + 1)
 	a.retriesRemaining = 30
 	
 	if a.server {

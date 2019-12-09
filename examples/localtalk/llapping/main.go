@@ -10,6 +10,7 @@ package main
 import (
 	"sync"
 	"time"
+	"log"
 
 	lt "github.com/cheesestraws/appletalk/lib/localtalk"
 )
@@ -39,15 +40,35 @@ func (pp *Pinger) Response() (bool, time.Time) {
 	return pp.iGotAResponse, pp.when
 }
 
+func (pp *Pinger) MarkAsResponded() {
+	pp.l.Lock()
+	defer pp.l.Unlock()
+	
+	if pp.iGotAResponse {
+		return // only pay attention to the first ACK
+	}
+	
+	pp.iGotAResponse = true
+	pp.when = time.Now()
+}
+
 func (pp *Pinger) Ping() (bool, time.Duration) {
 	// get the target address
 	pp.l.RLock()
 	target := pp.address
 	pp.l.RUnlock()
 
-	// add listener here
-	// defer removing it
+	// Add a callback to note when/whether we got a response, and defer
+	// removing it again
+	callback := func (p *lt.LLAPPacket) {
+		if p.LLAPType == 0x82 && p.Src == target {
+			pp.MarkAsResponded()
+		}
+	}
+	pp.p.LLAPControlCallbacks.Add(&callback)
+	defer pp.p.LLAPControlCallbacks.Remove(&callback)
 	
+	// Now fire off some ENQs
 	startTime := time.Now()
 	for i := 0; i < numberOfEnqs; i++ {
 		pp.p.SendRaw([]byte{target, target, 0x81})
@@ -59,5 +80,20 @@ func (pp *Pinger) Ping() (bool, time.Duration) {
 }
 
 func main() {
-
+	p := lt.NewPort(&lt.LToUDPListener{})
+	p.Start()
+	
+	// We do not acquire an address, because we're only mucking about
+	// with control traffic.
+	
+	var i uint8
+	for i = 0; i < 128; i++ {
+		log.Printf("Pinging %d", i)
+		p := NewPinger(p, i)
+		alive, lag := p.Ping()
+		if alive {
+			log.Printf("    alive; responded in %v", lag)
+		}
+	}
+	
 }
