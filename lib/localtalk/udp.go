@@ -3,6 +3,7 @@ package localtalk
 import (
 	"log"
 	"net"
+	"os"
 )
 
 // LToUDPListener implements LocalTalk over UDP multicast
@@ -15,7 +16,7 @@ type LToUDPListener struct {
 var _ Listener = &LToUDPListener{}
 
 var multicastGroup = &net.UDPAddr{
-	IP:   net.ParseIP("224.0.0.3"),
+	IP:   net.ParseIP("239.192.76.84"),
 	Port: 1954,
 }
 var broadcast = &net.UDPAddr{
@@ -77,14 +78,41 @@ func (l *LToUDPListener) Start() error {
 	return nil
 }
 
+func packetIsOneOfMine(recvaddr *net.UDPAddr, buf []byte) bool {
+	// Does the pid in the packet match mine?
+	pid := os.Getpid()
+	for i := 0; i < 4; i++ {
+		if buf[i] != uint8((pid >> (3 - i)*8) & 0xff) {
+			return false
+		}
+	}
+	
+	// It does!  Is the IP address one of mine?
+	// todo: better error handling. or any error handling.
+	intfs, _ := net.Interfaces()
+	for _, intf := range intfs {
+		addrs, _ := intf.Addrs()
+		for _, addr := range addrs {
+			ipaddr, ok := addr.(*net.IPAddr)
+			if ok {
+				if ipaddr.IP.Equal(recvaddr.IP) {
+					return true
+				}
+			}
+		}
+	}
+	
+	return false
+}
+
 func (l *LToUDPListener) runRecv(conn *net.UDPConn) {
 	// Now enter the packet run loop
 	for {
 		buf := make([]byte, 700, 700)
 
-		count, _, err := conn.ReadFrom(buf)
-		if count > 0 {
-			l.recvC <- buf[0:count]
+		count, addr, err := conn.ReadFromUDP(buf)
+		if count > 0 && !packetIsOneOfMine(addr, buf) {
+			l.recvC <- buf[4:count]
 		}
 
 		if err != nil {
@@ -112,6 +140,6 @@ func (l *LToUDPListener) runSend(conn *net.UDPConn) {
 			log.Printf("    %s", ddp.PrettyHeaders())
 		}
 		
-		_, err = conn.WriteToUDP(packet, broadcast)
+		_, err = conn.WriteToUDP(packet, multicastGroup)
 	}
 }
