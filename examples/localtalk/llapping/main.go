@@ -84,10 +84,17 @@ func (pp *Pinger) Ping() (bool, time.Duration) {
 }
 
 func printUsage() {
-	log.Printf("usage foo")
+	pn := os.Args[0]
+	log.Printf("usage: %s -a", pn)
+	log.Printf("       Scan the LToUDP network and report on all up nodes")
+	log.Printf("")
+	log.Printf("       %s [node]", pn)
+	log.Printf("       Pings the given node with LLAP ENQs")
 }
 
 func main() {
+	log.SetFlags(0)
+
 	p := lt.NewPort(&lt.LToUDPListener{})
 	p.Start()
 	
