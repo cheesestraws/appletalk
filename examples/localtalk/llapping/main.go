@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 	"log"
+	"os"
+	"strconv"
 
 	lt "github.com/cheesestraws/appletalk/lib/localtalk"
 )
@@ -61,9 +63,6 @@ func (pp *Pinger) Ping() (bool, time.Duration) {
 	// Add a callback to note when/whether we got a response, and defer
 	// removing it again
 	callback := func (p *lt.LLAPPacket) {
-		if p.LLAPType == 0x82 {
-			log.Printf("pong from %v", p.Src)
-		}
 		if p.LLAPType == 0x82 && p.Src == target {
 			pp.MarkAsResponded()
 		}
@@ -75,11 +74,17 @@ func (pp *Pinger) Ping() (bool, time.Duration) {
 	startTime := time.Now()
 	for i := 0; i < numberOfEnqs; i++ {
 		pp.p.SendRaw([]byte{target, target, 0x81})
-		time.Sleep(1 * time.Millisecond)
+		time.Sleep(200 * time.Microsecond)
 	}
+	
+	time.Sleep(1 * time.Second)
 	
 	responded, when := pp.Response()
 	return responded, when.Sub(startTime)
+}
+
+func printUsage() {
+	log.Printf("usage foo")
 }
 
 func main() {
@@ -89,14 +94,29 @@ func main() {
 	// We do not acquire an address, because we're only mucking about
 	// with control traffic.
 	
-	var i uint8
-	for i = 1; i < 255; i++ {
-		log.Printf("Pinging %d", i)
-		p := NewPinger(p, i)
-		alive, lag := p.Ping()
-		if alive {
-			log.Printf("    alive; responded in %v", lag)
+	if len(os.Args) == 2 && os.Args[1] == "-a" {
+		s := NewScanner(p)
+		s.Scan()
+		s.PrintResults()
+		
+		return
+	}
+	
+	if len(os.Args) == 2 {
+		node, err := strconv.Atoi(os.Args[1])
+		if err == nil && node > 0 && node < 255 {
+			for {
+				pp := NewPinger(p, uint8(node))
+				resp, when := pp.Ping()
+				if resp {
+					log.Printf("lapACK from %d in %v", node, when)
+				} else {
+					log.Printf("Request timed out")
+				}
+			}
+			return
 		}
 	}
 	
+	printUsage()
 }

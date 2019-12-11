@@ -26,7 +26,6 @@ func (s *Scanner) Scan() {
 	// removing it again
 	callback := func (p *lt.LLAPPacket) {
 		if p.LLAPType == 0x82 {
-			log.Printf("pong from %d", p.Src)
 			// Have we already got a response?
 			_, ok := s.recvTimes[p.Src]
 			if !ok {
@@ -40,6 +39,7 @@ func (s *Scanner) Scan() {
 	// now fire off some ENQs
 	var addr uint8
 	for addr = 1; addr < 255; addr++ {
+		s.startTimes[addr] = time.Now()
 		for i := 0; i < numberOfEnqs; i++ {
 			s.p.SendRaw([]byte{addr, addr, 0x81})
 			time.Sleep(200 * time.Microsecond)
@@ -47,4 +47,16 @@ func (s *Scanner) Scan() {
 	}
 	
 	time.Sleep(1 * time.Second)
+}
+
+func (s *Scanner) PrintResults() {
+	var addr uint8
+	for addr = 1; addr < 255; addr++ {
+		endTime, ok := s.recvTimes[addr]
+		
+		if ok {
+			latency := endTime.Sub(s.startTimes[addr])
+			log.Printf("Node %d responded in %v", addr, latency)
+		}
+	}
 }
