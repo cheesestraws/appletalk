@@ -101,8 +101,19 @@ func packetIsOneOfMine(recvaddr *net.UDPAddr, buf []byte) bool {
 			}
 		}
 	}
-	
+		
 	return false
+}
+
+func pidEmbeddedPacket(packet []byte) []byte {
+	buf := make([]byte, len(packet) + 4, len(packet) + 4)
+	copy(buf[4:], packet)
+	
+	pid := os.Getpid()
+	for i := 0; i < 4; i++ {
+		buf[i] = uint8((pid >> (3 - i)*8) & 0xff)
+	}
+	return buf
 }
 
 func (l *LToUDPListener) runRecv(conn *net.UDPConn) {
@@ -111,7 +122,8 @@ func (l *LToUDPListener) runRecv(conn *net.UDPConn) {
 		buf := make([]byte, 700, 700)
 
 		count, addr, err := conn.ReadFromUDP(buf)
-		if count > 0 && !packetIsOneOfMine(addr, buf) {
+		
+		if count > 4 && !packetIsOneOfMine(addr, buf) {
 			l.recvC <- buf[4:count]
 		}
 
@@ -124,6 +136,7 @@ func (l *LToUDPListener) runRecv(conn *net.UDPConn) {
 
 func (l *LToUDPListener) runSend(conn *net.UDPConn) {
 	for packet := range l.sendC {
+		/*
 		log.Printf("Sending packet: %d bytes", len(packet))
 		frame, err := DecodeLLAPPacket(packet)
 		if err != nil {
@@ -139,7 +152,7 @@ func (l *LToUDPListener) runSend(conn *net.UDPConn) {
 			}
 			log.Printf("    %s", ddp.PrettyHeaders())
 		}
-		
-		_, err = conn.WriteToUDP(packet, multicastGroup)
+		*/
+		conn.WriteToUDP(pidEmbeddedPacket(packet), multicastGroup)
 	}
 }

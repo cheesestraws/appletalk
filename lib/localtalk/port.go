@@ -53,13 +53,16 @@ func (p *Port) Start() error {
 	// receive channel
 	go func() {
 		for packet := range recvC {
-			// DEBUG
-			log.Printf("Got packet: %d bytes", len(packet))
 			frame, err := DecodeLLAPPacket(packet)
 			if err != nil {
 				log.Printf("    err: %v", err)
 			}
+
+			// DEBUG
+			/*
+			log.Printf("Got packet: %d bytes", len(packet))
 			log.Printf("    %s", frame.PrettyHeaders())
+			*/
 			
 			/*
 			// For debugging: Do we have a DDP packet?
@@ -90,6 +93,8 @@ func (p *Port) SendRaw(packet []byte) {
 
 // handleLLAPControlPacket 
 func (p *Port) handleLLAPControlPacket(l *LLAPPacket) {
+	p.LLAPControlCallbacks.Run(l)
+	
 	if l.LLAPType == lapACK {
 		p.handleACK(l)
 		return
@@ -99,6 +104,4 @@ func (p *Port) handleLLAPControlPacket(l *LLAPPacket) {
 		p.handleENQ(l)
 		return
 	}
-	
-	p.LLAPControlCallbacks.Run(l)
 }

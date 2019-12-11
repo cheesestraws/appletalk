@@ -15,7 +15,7 @@ import (
 	lt "github.com/cheesestraws/appletalk/lib/localtalk"
 )
 
-const numberOfEnqs = 5
+const numberOfEnqs = 20
 
 type Pinger struct {
 	l sync.RWMutex
@@ -61,6 +61,9 @@ func (pp *Pinger) Ping() (bool, time.Duration) {
 	// Add a callback to note when/whether we got a response, and defer
 	// removing it again
 	callback := func (p *lt.LLAPPacket) {
+		if p.LLAPType == 0x82 {
+			log.Printf("pong from %v", p.Src)
+		}
 		if p.LLAPType == 0x82 && p.Src == target {
 			pp.MarkAsResponded()
 		}
@@ -72,7 +75,7 @@ func (pp *Pinger) Ping() (bool, time.Duration) {
 	startTime := time.Now()
 	for i := 0; i < numberOfEnqs; i++ {
 		pp.p.SendRaw([]byte{target, target, 0x81})
-		time.Sleep(200 * time.Microsecond)
+		time.Sleep(1 * time.Millisecond)
 	}
 	
 	responded, when := pp.Response()
@@ -87,7 +90,7 @@ func main() {
 	// with control traffic.
 	
 	var i uint8
-	for i = 0; i < 128; i++ {
+	for i = 1; i < 255; i++ {
 		log.Printf("Pinging %d", i)
 		p := NewPinger(p, i)
 		alive, lag := p.Ping()
