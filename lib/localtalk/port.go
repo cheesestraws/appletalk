@@ -21,6 +21,8 @@ type Port struct {
 	LLAPControlCallbacks CallbackChain
 }
 
+// NewPort creates a LocalTalk port using the given listener.  It does not
+// start the port.
 func NewPort(l Listener) *Port {
 	return &Port{
 		io: l,
@@ -42,6 +44,8 @@ func (p *Port) Address() (uint8, bool) {
 	return p.address, p.iHaveAnAddress
 }
 
+// Start enables the port and its underlying listener, starts listening for 
+// traffic on it, and enables sending to it.
 func (p *Port) Start() error {
 	err := p.io.Start()
 	if err != nil {
@@ -78,7 +82,7 @@ func (p *Port) SendLLAP(packet LLAPPacket) {
 	p.sendC <- packet.EncodeBytes()
 }
 
-// handleLLAPControlPacket
+// handle an LLAP control packet
 func (p *Port) handleLLAPControlPacket(l *LLAPPacket) {
 	p.LLAPControlCallbacks.Run(l)
 
