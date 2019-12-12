@@ -1,7 +1,6 @@
 package main
 
-/* A Scanner scans a LocalTalk network for nodes using LLAP ENQ packets, 
-   printing out the nodes it finds. */
+/* scanner.go contains code for scanning a LocalTalk network for nodes */
 
 import (
 	"time"
@@ -10,6 +9,8 @@ import (
 	lt "github.com/cheesestraws/appletalk/lib/localtalk"
 )
 
+// Scanner scans a LocalTalk network for nodes using LLAP ENQ packets, 
+// printing out the nodes it finds.
 type Scanner struct {
 	p *lt.Port
 	
