@@ -11,7 +11,6 @@ type LLAPPacket struct {
 	Src      uint8
 	Dst      uint8
 	LLAPType uint8
-	Length   uint16
 	Data     []byte
 }
 
@@ -30,26 +29,14 @@ func DecodeLLAPPacket(p []byte) (*LLAPPacket, error) {
 		Src:      p[1],
 		LLAPType: p[2],
 	}
-
-	if len(p) > 5 {
-		size1 := uint16(p[3]&3) << 8
-		size2 := uint16(p[4])
-		size := size1 + size2
-
-		if len(p) < int(size)+3 {
-			return nil, Short
-		}
-
-		packet.Length = size
-		packet.Data = p[3 : size+3]
-	}
+	packet.Data = p[3:]
 
 	return &packet, nil
 }
 
 func (l *LLAPPacket) PrettyHeaders() string {
 	return fmt.Sprintf("from %s to %s, type %s, %d data bytes",
-		llapAddressString(l.Dst), llapAddressString(l.Src), llapTypeString(l.LLAPType), l.Length)
+		llapAddressString(l.Dst), llapAddressString(l.Src), llapTypeString(l.LLAPType), len(l.Data))
 }
 
 func (l *LLAPPacket) DDP() (*ddp.Packet, error) {

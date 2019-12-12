@@ -57,25 +57,8 @@ func (p *Port) Start() error {
 			if err != nil {
 				log.Printf("    err: %v", err)
 			}
-
-			// DEBUG
-			/*
-			log.Printf("Got packet: %d bytes", len(packet))
-			log.Printf("    %s", frame.PrettyHeaders())
-			*/
 			
-			/*
-			// For debugging: Do we have a DDP packet?
-			if frame.LLAPType == 1 || frame.LLAPType == 2 {
-				ddp, err := frame.DDP()
-				if err != nil {
-					log.Printf("    %v", err)
-				}
-				log.Printf("    %s", ddp.PrettyHeaders())
-			}
-			*/
-			
-			if frame.LLAPType >= lapLowestControlPacketType {
+			if frame.LLAPType >= LAPLowestControlPacketType {
 				p.handleLLAPControlPacket(frame)
 			}
 		}
@@ -95,12 +78,12 @@ func (p *Port) SendRaw(packet []byte) {
 func (p *Port) handleLLAPControlPacket(l *LLAPPacket) {
 	p.LLAPControlCallbacks.Run(l)
 	
-	if l.LLAPType == lapACK {
+	if l.LLAPType == LAPACK {
 		p.handleACK(l)
 		return
 	}
 	
-	if l.LLAPType == lapENQ {
+	if l.LLAPType == LAPENQ {
 		p.handleENQ(l)
 		return
 	}

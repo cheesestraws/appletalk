@@ -1,7 +1,7 @@
 package localtalk
 
-const lapLowestControlPacketType = 0x80
-const lapENQ = 0x81
-const lapACK = 0x82
-const lapRTS = 0x84
-const lapCTS = 0x85
+const LAPLowestControlPacketType = 0x80
+const LAPENQ = 0x81
+const LAPACK = 0x82
+const LAPRTS = 0x84
+const LAPCTS = 0x85
