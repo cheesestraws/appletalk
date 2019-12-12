@@ -118,7 +118,7 @@ func (p *Port) handleENQ(packet *LLAPPacket) {
 		// Send an acknowledgement that I already own this address, so the other
 		// will have to change its tune
 		log.Printf("Detected address collision; looking sternly at other node")
-		p.SendRaw([]byte{myAddress, myAddress, LAPACK})
+		p.SendLLAP(LLAPPacket{myAddress, myAddress, LAPACK, nil})
 	}
 }
 
@@ -141,7 +141,7 @@ func (p *Port) AcquireAddress() {
 		}
 		
 		// Transmit an ENQ
-		p.SendRaw([]byte{candidate, candidate, LAPENQ})
+		p.SendLLAP(LLAPPacket{candidate, candidate, LAPENQ, nil})
 		time.Sleep(200 * time.Microsecond)
 	}
 	

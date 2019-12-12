@@ -74,6 +74,10 @@ func (p *Port) SendRaw(packet []byte) {
 	p.sendC <- packet
 }
 
+func (p *Port) SendLLAP(packet LLAPPacket) {
+	p.sendC <- packet.EncodeBytes()
+}
+
 // handleLLAPControlPacket 
 func (p *Port) handleLLAPControlPacket(l *LLAPPacket) {
 	p.LLAPControlCallbacks.Run(l)

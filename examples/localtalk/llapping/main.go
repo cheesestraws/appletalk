@@ -73,7 +73,7 @@ func (pp *Pinger) Ping() (bool, time.Duration) {
 	// Now fire off some ENQs
 	startTime := time.Now()
 	for i := 0; i < numberOfEnqs; i++ {
-		pp.p.SendRaw([]byte{target, target, 0x81})
+		pp.p.SendLLAP(lt.LLAPPacket{target, target, 0x81, nil})
 		time.Sleep(200 * time.Microsecond)
 	}
 	
