@@ -67,6 +67,13 @@ func (p *Port) Start() error {
 			}
 		}
 	}()
+	
+	// error channel
+	go func() {
+		for err := range errorC {
+			log.Printf("LocalTalk listener error: %v", err) 
+		}
+	}()
 
 	p.sendC = sendC
 	p.errorC = errorC
