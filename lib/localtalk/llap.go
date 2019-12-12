@@ -14,6 +14,15 @@ type LLAPPacket struct {
 	Data     []byte
 }
 
+func (l LLAPPacket) EncodeBytes() []byte {
+	buf := make([]byte, 3 + len(l.Data), 3 + len(l.Data))
+	buf[0] = l.Dst
+	buf[1] = l.Src
+	buf[2] = l.LLAPType
+	copy(buf[3:], l.Data)
+	return buf
+}
+
 var IncompleteHeader error = errors.New("incomplete LLAP header")
 var Short error = errors.New("packet data too short for its declared LLAP length")
 var NotDDP error = errors.New("not a DDP packet")
