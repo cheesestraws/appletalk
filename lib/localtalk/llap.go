@@ -15,7 +15,7 @@ type LLAPPacket struct {
 }
 
 func (l LLAPPacket) EncodeBytes() []byte {
-	buf := make([]byte, 3 + len(l.Data), 3 + len(l.Data))
+	buf := make([]byte, 3+len(l.Data), 3+len(l.Data))
 	buf[0] = l.Dst
 	buf[1] = l.Src
 	buf[2] = l.LLAPType

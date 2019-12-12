@@ -24,7 +24,6 @@ var broadcast = &net.UDPAddr{
 	Port: 1954,
 }
 
-
 func (l *LToUDPListener) init() {
 	if l.recvC == nil {
 		l.recvC = make(chan []byte)
@@ -64,7 +63,7 @@ func (l *LToUDPListener) Channels() (<-chan []byte, chan<- []byte, <-chan error)
 func (l *LToUDPListener) Start() error {
 	l.init()
 
-//	go l.debugRecv()
+	//	go l.debugRecv()
 
 	// Set up the multicast listener
 	conn, err := net.ListenMulticastUDP("udp", nil, multicastGroup)
@@ -82,11 +81,11 @@ func packetIsOneOfMine(recvaddr *net.UDPAddr, buf []byte) bool {
 	// Does the pid in the packet match mine?
 	pid := os.Getpid()
 	for i := 0; i < 4; i++ {
-		if buf[i] != uint8((pid >> (3 - i)*8) & 0xff) {
+		if buf[i] != uint8((pid>>(3-i)*8)&0xff) {
 			return false
 		}
 	}
-	
+
 	// It does!  Is the IP address one of mine?
 	// todo: better error handling. or any error handling.
 	intfs, _ := net.Interfaces()
@@ -101,17 +100,17 @@ func packetIsOneOfMine(recvaddr *net.UDPAddr, buf []byte) bool {
 			}
 		}
 	}
-		
+
 	return false
 }
 
 func pidEmbeddedPacket(packet []byte) []byte {
-	buf := make([]byte, len(packet) + 4, len(packet) + 4)
+	buf := make([]byte, len(packet)+4, len(packet)+4)
 	copy(buf[4:], packet)
-	
+
 	pid := os.Getpid()
 	for i := 0; i < 4; i++ {
-		buf[i] = uint8((pid >> (3 - i)*8) & 0xff)
+		buf[i] = uint8((pid >> (3 - i) * 8) & 0xff)
 	}
 	return buf
 }
@@ -122,7 +121,7 @@ func (l *LToUDPListener) runRecv(conn *net.UDPConn) {
 		buf := make([]byte, 700, 700)
 
 		count, addr, err := conn.ReadFromUDP(buf)
-		
+
 		if count > 4 && !packetIsOneOfMine(addr, buf) {
 			l.recvC <- buf[4:count]
 		}
@@ -137,21 +136,21 @@ func (l *LToUDPListener) runRecv(conn *net.UDPConn) {
 func (l *LToUDPListener) runSend(conn *net.UDPConn) {
 	for packet := range l.sendC {
 		/*
-		log.Printf("Sending packet: %d bytes", len(packet))
-		frame, err := DecodeLLAPPacket(packet)
-		if err != nil {
-			log.Printf("    err: %v", err)
-		}
-		log.Printf("    %s", frame.PrettyHeaders())
-
-		// For debugging: Do we have a DDP packet?
-		if frame.LLAPType == 1 || frame.LLAPType == 2 {
-			ddp, err := frame.DDP()
+			log.Printf("Sending packet: %d bytes", len(packet))
+			frame, err := DecodeLLAPPacket(packet)
 			if err != nil {
-				log.Printf("    %v", err)
+				log.Printf("    err: %v", err)
 			}
-			log.Printf("    %s", ddp.PrettyHeaders())
-		}
+			log.Printf("    %s", frame.PrettyHeaders())
+
+			// For debugging: Do we have a DDP packet?
+			if frame.LLAPType == 1 || frame.LLAPType == 2 {
+				ddp, err := frame.DDP()
+				if err != nil {
+					log.Printf("    %v", err)
+				}
+				log.Printf("    %s", ddp.PrettyHeaders())
+			}
 		*/
 		conn.WriteToUDP(pidEmbeddedPacket(packet), multicastGroup)
 	}

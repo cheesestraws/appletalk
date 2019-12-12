@@ -8,7 +8,7 @@ import (
 // called when some kind of packet reception event occurs.
 type CallbackChain struct {
 	l sync.RWMutex
-	
+
 	m map[*func(l *LLAPPacket)]struct{} // well this is a hack
 }
 
@@ -17,11 +17,11 @@ type CallbackChain struct {
 func (c *CallbackChain) Add(p *func(l *LLAPPacket)) {
 	c.l.Lock()
 	defer c.l.Unlock()
-	
+
 	if c.m == nil {
 		c.m = make(map[*func(l *LLAPPacket)]struct{})
 	}
-	
+
 	c.m[p] = struct{}{}
 }
 
@@ -32,11 +32,11 @@ func (c *CallbackChain) Add(p *func(l *LLAPPacket)) {
 func (c *CallbackChain) Remove(p *func(l *LLAPPacket)) {
 	c.l.Lock()
 	defer c.l.Unlock()
-	
+
 	if c.m == nil {
 		return
 	}
-	
+
 	delete(c.m, p)
 }
 
@@ -44,7 +44,7 @@ func (c *CallbackChain) Remove(p *func(l *LLAPPacket)) {
 func (c *CallbackChain) Run(p *LLAPPacket) {
 	c.l.RLock()
 	defer c.l.RUnlock()
-	
+
 	for callback := range c.m {
 		if callback != nil {
 			(*callback)(p)
