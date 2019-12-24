@@ -1,13 +1,15 @@
 package main
 
 import (
-	lt "github.com/cheesestraws/appletalk/lib/localtalk"
+	et "github.com/cheesestraws/appletalk/lib/ethertalk"
 )
 
 func main() {
-	p := lt.NewPort(&lt.LToUDPListener{})
+	p := et.NewPort(&et.PCAPListener{
+		Interface: "tap0",
+	})
+	
 	p.Start()
-	p.AcquireAddress()
-
+	
 	select {}
 }
