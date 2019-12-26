@@ -36,3 +36,23 @@ func (p ProtocolType) String() string {
 	}
 	return fmt.Sprintf("UnknownProtocol %d", uint16(p))
 }
+
+// Function encodes what AARP function is being requested.  
+type Function uint16
+
+const Request Function = 1
+const Response Function = 2
+const Probe Function = 3
+
+func (f Function) String() string {
+	if f == Request {
+		return "Request"
+	}
+	if f == Response {
+		return "Response"
+	}
+	if f == Probe {
+		return "Probe"
+	}
+	return fmt.Sprintf("UnknownFunction %d", uint16(f))
+}

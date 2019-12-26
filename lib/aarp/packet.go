@@ -7,12 +7,12 @@ import (
 
 // Packet encodes the information in an AARP packet.
 type Packet struct {
-	HardwareType uint16
-	ProtocolType uint16
+	HardwareType HardwareType
+	ProtocolType ProtocolType
 	HardwareAddressLength byte
 	ProtocolAddressLength byte
 	
-	Function uint16
+	Function Function
 	HWAddr1 string // Addresses as strings rather than []byte 
 	               // so we can use them as hash keys
 	ProtoAddr1 string
@@ -21,6 +21,7 @@ type Packet struct {
 }
 
 var ErrShortPacket = errors.New("malformed packet: too short")
+var ErrShortAddressPacket = errors.New("malformed packet: too short for addresses (but header ok)")
 
 // Decode turns an AARP packet from its on-the-wire representation into a
 // struct.  For the sources of the offsets, please consult /Inside Appletalk/
@@ -34,11 +35,32 @@ func Decode(packet []byte) (*Packet, error) {
 	p := &Packet{
 	}
 	
-	p.HardwareType = binary.BigEndian.Uint16(packet)
-	p.ProtocolType = binary.BigEndian.Uint16(packet[2:])
+	p.HardwareType = HardwareType(binary.BigEndian.Uint16(packet))
+	p.ProtocolType = ProtocolType(binary.BigEndian.Uint16(packet[2:]))
 	p.HardwareAddressLength = packet[4]
 	p.ProtocolAddressLength = packet[5]
-	p.Function = binary.BigEndian.Uint16(packet)
+	p.Function = Function(binary.BigEndian.Uint16(packet[6:]))
+	
+	// Now, we know how big the rest of the packet should be, because the
+	// rest of the packet consists of two hardware addresses and two protocol
+	// addresses.
+	
+	if len(packet) < 8 + (2 * int(p.HardwareAddressLength)) + (2 * int(p.ProtocolAddressLength)) {
+		return nil, ErrShortAddressPacket
+	}
+	
+	nextAddress := packet[8:]
+	p.HWAddr1 = string(nextAddress[0:p.HardwareAddressLength])
+	nextAddress = nextAddress[p.HardwareAddressLength:]
+	
+	p.ProtocolAddr1 = nextAddress[0:p.ProtocolAddressLength]
+	nextAddress = nextAddress[p.ProtocolAddressLength:]
+	
+	p.HWAddr2 = string(nextAddress[0:p.HardwareAddressLength])
+	nextAddress = nextAddress[p.HardwareAddressLength:]
+	
+	p.ProtocolAddr2 = nextAddress[0:p.ProtocolAddressLength]
+	nextAddress = nextAddress[p.ProtocolAddressLength:]
 	
 	return p, nil
 }
