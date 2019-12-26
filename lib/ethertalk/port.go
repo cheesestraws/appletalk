@@ -43,6 +43,10 @@ func (p *Port) Start() error {
 			log.Printf("port: recvd %v bytes", len(f))
 			if isAppleTalkPhase2(f) {
 				// do something
+				if isAARPFrame(f) {
+					handleAARPFrame(f)
+					continue	
+				}
 			}
 		}
 	}()
@@ -80,13 +84,22 @@ func isAppleTalkPhase2(frame []byte) bool {
 	
 	// Do we have a valid SNAP protocol discriminator?
 	if bytes.Equal(frame[17:22], appletalkSNAPProtocol) {
-		log.Printf("got appletalk")
 		return true
 	}
 	if bytes.Equal(frame[17:22], aarpSNAPProtocol) {
-		log.Printf("got aarp")
 		return true
 	}
 	
 	return false
+}
+
+func isAARPFrame(frame []byte) bool {
+	if bytes.Equal(frame[17:22], aarpSNAPProtocol) {
+		return true
+	}
+	return false
+}
+
+func handleAARPFrame(frame []byte) {
+	log.Printf("got aarp")
 }
