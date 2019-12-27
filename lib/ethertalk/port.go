@@ -3,6 +3,8 @@ package ethertalk
 import (
 	"log"
 	"bytes"
+	
+	"github.com/cheesestraws/appletalk/lib/aarp"
 )
 
 var appletalkSNAPProtocol = []byte{0x08, 0x00, 0x07, 0x80, 0x9B}
@@ -44,7 +46,7 @@ func (p *Port) Start() error {
 			if isAppleTalkPhase2(f) {
 				// do something
 				if isAARPFrame(f) {
-					handleAARPFrame(f)
+					handleAARPFrame(f[22:])
 					continue	
 				}
 			}
@@ -100,6 +102,12 @@ func isAARPFrame(frame []byte) bool {
 	return false
 }
 
-func handleAARPFrame(frame []byte) {
+func handleAARPFrame(payload []byte) {
 	log.Printf("got aarp")
+	
+	packet, err := aarp.Decode(payload)
+	if err != nil {
+		log.Printf("aarp err: %v", err)
+	}
+	log.Printf(packet.String())
 }

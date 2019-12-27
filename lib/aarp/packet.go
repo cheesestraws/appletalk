@@ -1,6 +1,7 @@
 package aarp
 
 import (
+	"fmt"
 	"errors"
 	"encoding/binary"
 )
@@ -53,14 +54,20 @@ func Decode(packet []byte) (*Packet, error) {
 	p.HWAddr1 = string(nextAddress[0:p.HardwareAddressLength])
 	nextAddress = nextAddress[p.HardwareAddressLength:]
 	
-	p.ProtocolAddr1 = nextAddress[0:p.ProtocolAddressLength]
+	p.ProtoAddr1 = string(nextAddress[0:p.ProtocolAddressLength])
 	nextAddress = nextAddress[p.ProtocolAddressLength:]
 	
 	p.HWAddr2 = string(nextAddress[0:p.HardwareAddressLength])
 	nextAddress = nextAddress[p.HardwareAddressLength:]
 	
-	p.ProtocolAddr2 = nextAddress[0:p.ProtocolAddressLength]
+	p.ProtoAddr2 = string(nextAddress[0:p.ProtocolAddressLength])
 	nextAddress = nextAddress[p.ProtocolAddressLength:]
 	
 	return p, nil
+}
+
+func (p *Packet) String() string {
+	prefix := fmt.Sprintf("aarp: %v %v/%v: ", p.Function, p.HardwareType, p.ProtocolType)
+	
+	return prefix
 }
