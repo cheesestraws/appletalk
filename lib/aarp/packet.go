@@ -68,6 +68,19 @@ func Decode(packet []byte) (*Packet, error) {
 
 func (p *Packet) String() string {
 	prefix := fmt.Sprintf("aarp: %v %v/%v: ", p.Function, p.HardwareType, p.ProtocolType)
+	var trailer string
 	
-	return prefix
+	if p.Function == Request {
+		trailer = fmt.Sprintf("%x/%x wants hwaddr for %x", p.HWAddr1, p.ProtoAddr1, p.ProtoAddr2)
+	}
+	
+	if p.Function == Response {
+		trailer = fmt.Sprintf("%x is hwaddr for %x (%x/%x requested)", p.HWAddr1, p.ProtoAddr1, p.HWAddr2, p.ProtoAddr2)
+	}
+	
+	if p.Function == Probe {
+		trailer = fmt.Sprintf("%x is tentatively adopting %x", p.HWAddr1, p.ProtoAddr1)
+	}
+	
+	return prefix + trailer
 }
